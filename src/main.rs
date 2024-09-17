@@ -20,8 +20,7 @@ enum Commands {
         /// Initialize even if there are files
         #[clap(long, action)]
         force: bool,
-    }
-    
+    },
 }
 
 fn main() -> Result<()> {
@@ -29,18 +28,19 @@ fn main() -> Result<()> {
     let mut log = Logger::new();
     match &cli.command {
         Commands::Install { force } => {
-            starknet_install(*force,&mut log)?;
+            starknet_install(*force, &mut log)?;
         }
     }
     log.success("The dev setup is completed successfully!");
-    log.info(format!("use scarb new {} to create a new project","<project_name>".green()));
-    
+    log.info(format!(
+        "use scarb new {} to create a new project",
+        "<project_name>".green()
+    ));
 
     Ok(())
 }
 
 fn starknet_install(force: bool, log: &mut Logger) -> Result<()> {
-    
     if force {
         log.warn("Forcing installation, even if files are present.");
     }
@@ -54,16 +54,15 @@ fn starknet_install(force: bool, log: &mut Logger) -> Result<()> {
         scarb_version
     };
 
+    
     install_asdf(log)?;
-    install_scarb(&scarb_version,log)?;
+    install_scarb(&scarb_version, log)?;
 
     log.success("Installation completed successfully!");
     Ok(())
 }
 
-
 fn install_asdf(log: &mut Logger) -> Result<()> {
-    
     let versioned_url = format!("https://github.com/asdf-vm/asdf.git",);
     if !is_installed("curl")? {
         install_package("curl").unwrap();
@@ -82,9 +81,22 @@ fn install_asdf(log: &mut Logger) -> Result<()> {
             .arg(&asdf_dir)
             .output()
             .unwrap();
-        update_bashrc()?;
-        source_bashrc()?;
+        
         log.success("asdf installed successfully.");
+        let choice = prompt_user("Do you want to automate .bashrc edits (y/n):")?;
+        let choice = if choice.trim() == "y" { 1 } else { 0 };
+        if choice == 1 {
+            update_bashrc()?;
+            source_bashrc()?;
+        } else {
+            log.info("add the following to your bashrc file");
+            log.log(". $HOME/.asdf/asdf.sh");
+            log.log(". $HOME/.asdf/completions/asdf.bash");
+            log.log("and rerun the cli");
+            std::process::exit(0);
+
+        }
+        
     } else {
         log.info("asdf is already installed".green());
     }
@@ -92,8 +104,7 @@ fn install_asdf(log: &mut Logger) -> Result<()> {
     Ok(())
 }
 
-fn install_scarb(version: &str,log: &mut Logger) -> Result<()> {
-    
+fn install_scarb(version: &str, log: &mut Logger) -> Result<()> {
     log.loading(format!("Installing scarb version {}...", version.cyan()));
     if !is_installed("scarb").unwrap() {
         let plugin_output = Command::new("asdf")
@@ -122,18 +133,16 @@ fn install_scarb(version: &str,log: &mut Logger) -> Result<()> {
             let error = "Failed to install".to_string().red();
             return Err(anyhow!("{} {}", error, "scarb".cyan()));
         }
-        
-        let _add_scarb_global = Command::new("asdf")
-        .arg("global")
-        .arg("scarb")
-        .arg("latest")
-        .output()
-        .unwrap();
 
+        let _add_scarb_global = Command::new("asdf")
+            .arg("global")
+            .arg("scarb")
+            .arg("latest")
+            .output()
+            .unwrap();
     } else {
         log.info("scarb is already installed".green());
     }
 
     Ok(())
 }
-

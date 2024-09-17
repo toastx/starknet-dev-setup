@@ -13,8 +13,9 @@ pub fn update_bashrc() -> Result<()> {
     let bashrc_content = read_to_string(&bashrc_path)?;
     let asdf_lines = r#"
 # Load asdf completions and asdf itself
-. "$HOME/.asdf/completions/asdf.bash"
 . "$HOME/.asdf/asdf.sh"
+. "$HOME/.asdf/completions/asdf.bash"
+
 "#;
 
     if !bashrc_content.contains(".asdf/asdf.sh") {
