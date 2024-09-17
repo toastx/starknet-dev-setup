@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["toastx"]
 description = "StarkNet development setup made easier with one command"
 readme = "README.md"
-repository = ""
+repository = "https://github.com/toastx/starknet-dev-setup"
 
 [dependencies]
 anyhow = "1.0.89"
