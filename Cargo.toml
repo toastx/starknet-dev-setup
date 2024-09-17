@@ -23,3 +23,8 @@ paris = "1.5.15"
 reqwest = { version = "0.12.7", features = ["blocking"] }
 serde = { version = "1.0.210", features = ["derive"] }
 serde_json = "1.0.128"
+
+[[bin]]
+name = "starkdev"
+path = "src/main.rs"
+
