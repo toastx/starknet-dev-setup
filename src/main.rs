@@ -29,7 +29,7 @@ fn main() -> Result<()> {
     let mut log = Logger::new();
     match &cli.command {
         Commands::Install { force } => {
-            styro_install(*force,&mut log)?;
+            starknet_install(*force,&mut log)?;
         }
     }
     log.success("The dev setup is completed successfully!");
@@ -39,7 +39,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn styro_install(force: bool, log: &mut Logger) -> Result<()> {
+fn starknet_install(force: bool, log: &mut Logger) -> Result<()> {
     
     if force {
         log.warn("Forcing installation, even if files are present.");
