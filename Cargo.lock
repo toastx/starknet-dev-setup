@@ -3,20 +3,6 @@
 version = 3
 
 [[package]]
-name = "Starknet_Dev_Setup"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "colored",
- "eyre",
- "paris",
- "reqwest",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "addr2line"
 version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -897,6 +883,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e9aaafd5a2b6e3d657ff009d82fbd630b6bd54dd4eb06f21693925cdf80f9b8b"
 dependencies = [
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "sdc"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "colored",
+ "eyre",
+ "paris",
+ "reqwest",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
