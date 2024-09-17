@@ -1,18 +1,13 @@
 [package]
 name = "starkdev"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["toastx"]
 description = "A downloader to simplify StarkNet development setup"
 readme = "README.md"
 repository = "https://github.com/toastx/starknet-dev-setup"
 license = "MIT"
-include = [
-    "src/**/*",
-    "Cargo.toml",
-    "README.md",
-    "LICENSE",
-]
+include = ["src/**/*", "Cargo.toml", "README.md", "LICENSE"]
 
 [dependencies]
 anyhow = "1.0.89"
@@ -27,4 +22,3 @@ serde_json = "1.0.128"
 [[bin]]
 name = "starkdev"
 path = "src/main.rs"
-
