@@ -2,15 +2,9 @@ use anyhow::{anyhow, Result};
 use clap::{Parser, Subcommand};
 use colored::*;
 use paris::Logger;
-use reqwest;
-use serde_json;
-use std::io::{self, Write};
 use std::process::Command;
-
-#[derive(serde::Deserialize)]
-struct ReleaseInfo {
-    tag_name: String,
-}
+mod helpers;
+use helpers::{helpers::*};
 
 #[derive(Parser)]
 #[command(name = "StarkNet CLI")]
@@ -23,10 +17,22 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     Install {
-        /// Install the starknet dev tools
         #[clap(long, action)]
         force: bool,
     },
+    Init{
+        //name of your workspace
+        name: String,
+        /// Clone a template repo from github (url)
+        #[clap(short, long)]
+        repo: Option<String>,
+        /// Do not initialize a git repository
+        #[clap(long)]
+        no_git: bool,
+        /// Initialize even if there are files
+        #[clap(long, action)]
+        force: bool,
+    }
 }
 
 fn main() -> Result<()> {
@@ -35,6 +41,9 @@ fn main() -> Result<()> {
     match &cli.command {
         Commands::Install { force } => {
             starknet_install(*force)?;
+        }
+        Commands::Init { name, repo, no_git, force } => {
+            starknet_init(name, repo, *no_git, *force)?;
         }
     }
 
@@ -48,14 +57,7 @@ fn starknet_install(force: bool) -> Result<()> {
         log.warn("Forcing installation, even if files are present.");
     }
 
-    log.info("Starting the installation process for StarkNet.");
-
-    let asdf_version = prompt_user("Enter the asdf version (leave empty for latest):")?;
-    let asdf_version = if asdf_version.trim().is_empty() {
-        "latest".to_string()
-    } else {
-        asdf_version
-    };
+    log.info("Welcome to StarkNet Dev Cli!");
 
     let scarb_version = prompt_user("Enter the scarb version (leave empty for latest):")?;
     let scarb_version = if scarb_version.trim().is_empty() {
@@ -64,116 +66,81 @@ fn starknet_install(force: bool) -> Result<()> {
         scarb_version
     };
 
-    log.info(format!(
-        "Installing asdf version {} and scarb version {}...",
-        asdf_version.cyan(),
-        scarb_version.cyan()
-    ));
-
-    install_asdf(&asdf_version)?;
+    install_asdf()?;
     install_scarb(&scarb_version)?;
 
     log.success("Installation completed successfully!");
-
     Ok(())
 }
 
-// Function to prompt the user for input
-fn prompt_user(prompt: &str) -> Result<String> {
-    print!("{} ", prompt);
-    io::stdout().flush().expect("Failed to flush stdout");
 
-    let mut input = String::new();
-    io::stdin().read_line(&mut input)?;
-
-    Ok(input.trim().to_string())
-}
-
-// Simulate asdf installation process
-fn install_asdf(version: &str) -> Result<()> {
+fn install_asdf() -> Result<()> {
     let mut log = Logger::new();
-    log.log("lets goo");
+
+    let versioned_url = format!("https://github.com/asdf-vm/asdf.git",);
     if !is_installed("curl")? {
-        println!("inside curl");
         install_package("curl").unwrap();
     }
-    println!("didnt go inside curl");
     if !is_installed("git")? {
         install_package("git").unwrap();
     }
-    println!("didnt go inside git");
-    if !is_installed("asdf").unwrap() {
-        let latest_version = if version != "latest" {
-            version.to_string()
-        } else {
-            get_latest_version("asdf-vm", "asdf").unwrap()
-        };
 
-        let versioned_url = format!(
-            "https://github.com/asdf-vm/asdf.git ~/.asdf --branch {}",
-            latest_version
-        );
-        Command::new("git")
+    if !is_installed("asdf").unwrap() {
+        log.loading("Installing asdf...".cyan());
+        let home_dir = std::env::var("HOME")?;
+        let asdf_dir = format!("{}/.asdf", home_dir);
+        let asdf_output = Command::new("git")
             .arg("clone")
-            .arg(versioned_url)
+            .arg(versioned_url.clone())
+            .arg(&asdf_dir)
             .output()
             .unwrap();
+        println!("asdf output: {:?}", asdf_output);
+        update_bashrc()?;
+        source_bashrc()?;
+        log.success("asdf installed successfully.");
+    } else {
+        log.info("asdf is already installed".green());
     }
-
-    log.info(format!("Installing asdf version {}...", version.cyan()));
-    log.success("asdf installed successfully.");
 
     Ok(())
 }
 
-// Simulate scarb installation process
 fn install_scarb(version: &str) -> Result<()> {
     let mut log = Logger::new();
+    log.loading(format!("Installing scarb version {}...", version.cyan()));
+    if !is_installed("scarb").unwrap() {
+        let plugin_output = Command::new("asdf")
+            .arg("plugin")
+            .arg("add")
+            .arg("scarb")
+            .output()
+            .unwrap();
 
-    // Simulate checking if version exists
-    if version == "notfound" {
-        return Err(anyhow!("scarb version {} not found.", version));
+        if !plugin_output.status.success() {
+            println!("plugin output: {:?}", plugin_output);
+            let error = "Failed to add".to_string().red();
+            return Err(anyhow!("{} {}", error, "scarb".cyan()));
+        }
+        let scarb_output = Command::new("asdf")
+            .arg("install")
+            .arg("scarb")
+            .arg(version)
+            .output()
+            .unwrap();
+
+        if scarb_output.status.success() {
+            log.success("scarb installed successfully.");
+        } else {
+            println!("scarb output: {:?}", scarb_output);
+            let error = "Failed to install".to_string().red();
+            return Err(anyhow!("{} {}", error, "scarb".cyan()));
+        }
+    } else {
+        log.info("scarb is already installed".green());
     }
-
-    log.info(format!("Installing scarb version {}...", version.cyan()));
-    // Simulate success
-    log.success("scarb installed successfully.");
 
     Ok(())
 }
 
-fn is_installed(package: &str) -> Result<bool> {
-    let output = Command::new("which").arg(package).output()?;
-    println!("is_installed called for {}", package);
-    println!("{:?}", output);
-    Ok(output.status.success())
-}
-
-fn install_package(package: &str) -> Result<()> {
-    let mut log = Logger::new();
-    let apt_output = Command::new("sudo")
-        .arg("apt")
-        .arg("install")
-        .arg("-y")
-        .arg(package)
-        .output()?;
-
-    if !apt_output.status.success() {
-        let error = "Failed to install {}".to_string().red();
-        return Err(anyhow!("{} {}", error, package.cyan()));
-    }
-    let success = "{} installed successfully.".to_string().green();
-    log.success(format!("{} {}", success, package.cyan()));
-
-    Ok(())
-}
-
-fn get_latest_version(package: &str, owner: &str) -> Result<String> {
-    let url = format!(
-        "https://api.github.com/repos/{}/{}/releases/latest",
-        owner, package
-    );
-    let output = reqwest::blocking::get(url)?.text()?;
-    let release_info: ReleaseInfo = serde_json::from_str(&output)?;
-    Ok(release_info.tag_name)
-}
+fn starknet_init(name: &str, repo: &Option<String>, no_git: bool, force: bool) -> Result<()> { todo!()}
