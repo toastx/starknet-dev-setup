@@ -4,11 +4,11 @@ use colored::*;
 use paris::Logger;
 use std::process::Command;
 mod helpers;
-use helpers::{helpers::*};
+use helpers::helpers::*;
 
 #[derive(Parser)]
-#[command(name = "StarkNet CLI")]
-#[command(about = "A CLI tool to simplify StarkNet development setup", long_about = None)]
+#[command(name = "Starknet Dev Setup")]
+#[command(about = "A downloader to simplify StarkNet development setup", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -17,42 +17,30 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     Install {
-        #[clap(long, action)]
-        force: bool,
-    },
-    Init{
-        //name of your workspace
-        name: String,
-        /// Clone a template repo from github (url)
-        #[clap(short, long)]
-        repo: Option<String>,
-        /// Do not initialize a git repository
-        #[clap(long)]
-        no_git: bool,
         /// Initialize even if there are files
         #[clap(long, action)]
         force: bool,
     }
+    
 }
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-
+    let mut log = Logger::new();
     match &cli.command {
         Commands::Install { force } => {
-            starknet_install(*force)?;
-        }
-        Commands::Init { name, repo, no_git, force } => {
-            starknet_init(name, repo, *no_git, *force)?;
+            styro_install(*force,&mut log)?;
         }
     }
+    log.success("The dev setup is completed successfully!");
+    log.info(format!("use scarb new {} to create a new project","<project_name>".green()));
+    
 
     Ok(())
 }
 
-fn starknet_install(force: bool) -> Result<()> {
-    let mut log = Logger::new();
-
+fn styro_install(force: bool, log: &mut Logger) -> Result<()> {
+    
     if force {
         log.warn("Forcing installation, even if files are present.");
     }
@@ -66,17 +54,16 @@ fn starknet_install(force: bool) -> Result<()> {
         scarb_version
     };
 
-    install_asdf()?;
-    install_scarb(&scarb_version)?;
+    install_asdf(log)?;
+    install_scarb(&scarb_version,log)?;
 
     log.success("Installation completed successfully!");
     Ok(())
 }
 
 
-fn install_asdf() -> Result<()> {
-    let mut log = Logger::new();
-
+fn install_asdf(log: &mut Logger) -> Result<()> {
+    
     let versioned_url = format!("https://github.com/asdf-vm/asdf.git",);
     if !is_installed("curl")? {
         install_package("curl").unwrap();
@@ -106,8 +93,8 @@ fn install_asdf() -> Result<()> {
     Ok(())
 }
 
-fn install_scarb(version: &str) -> Result<()> {
-    let mut log = Logger::new();
+fn install_scarb(version: &str,log: &mut Logger) -> Result<()> {
+    
     log.loading(format!("Installing scarb version {}...", version.cyan()));
     if !is_installed("scarb").unwrap() {
         let plugin_output = Command::new("asdf")
@@ -136,6 +123,14 @@ fn install_scarb(version: &str) -> Result<()> {
             let error = "Failed to install".to_string().red();
             return Err(anyhow!("{} {}", error, "scarb".cyan()));
         }
+        
+        let _add_scarb_global = Command::new("asdf")
+        .arg("global")
+        .arg("scarb")
+        .arg("latest")
+        .output()
+        .unwrap();
+
     } else {
         log.info("scarb is already installed".green());
     }
@@ -143,4 +138,3 @@ fn install_scarb(version: &str) -> Result<()> {
     Ok(())
 }
 
-fn starknet_init(name: &str, repo: &Option<String>, no_git: bool, force: bool) -> Result<()> { todo!()}
