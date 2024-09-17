@@ -3,7 +3,7 @@ name = "Starknet_Dev_Setup"
 version = "0.1.0"
 edition = "2021"
 authors = ["toastx"]
-
+description = "A downloader to simplify StarkNet development setup"
 readme = "README.md"
 repository = "https://github.com/toastx/starknet-dev-setup"
 license = "MIT"
