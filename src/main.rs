@@ -82,7 +82,6 @@ fn install_asdf(log: &mut Logger) -> Result<()> {
             .arg(&asdf_dir)
             .output()
             .unwrap();
-        println!("asdf output: {:?}", asdf_output);
         update_bashrc()?;
         source_bashrc()?;
         log.success("asdf installed successfully.");
