@@ -26,18 +26,7 @@ pub fn update_bashrc() -> Result<()> {
     Ok(())
 }
 
-pub fn source_bashrc() -> io::Result<()> {
-    let bashrc_path = std::env::var("HOME").unwrap() + "/.bashrc";
-    let status = Command::new("source").arg(bashrc_path).status()?;
 
-    if status.success() {
-        println!("Successfully sourced ~/.bashrc.");
-    } else {
-        println!("Failed to source ~/.bashrc. Please restart your terminal.");
-    }
-
-    Ok(())
-}
 
 pub fn prompt_user(prompt: &str) -> Result<String> {
     print!("{} ", prompt);

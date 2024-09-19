@@ -1,6 +1,6 @@
 [package]
 name = "starkdev"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["toastx"]
 description = "A downloader to simplify StarkNet development setup"

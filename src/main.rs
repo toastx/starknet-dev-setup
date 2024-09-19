@@ -48,6 +48,8 @@ fn starknet_install(force: bool, log: &mut Logger) -> Result<()> {
 
     log.info("Welcome to StarkNet Dev Cli!");
 
+    install_asdf(log)?;
+
     let scarb_version = prompt_user("Enter the scarb version (leave empty for latest):")?;
     let scarb_version = if scarb_version.trim().is_empty() {
         "latest".to_string()
@@ -55,11 +57,10 @@ fn starknet_install(force: bool, log: &mut Logger) -> Result<()> {
         scarb_version
     };
 
-    install_asdf(log)?;
+    
     install_scarb(&scarb_version, log)?;
     install_snfoundry(log)?;
 
-    log.success("Installation completed successfully!");
     Ok(())
 }
 
@@ -89,12 +90,15 @@ fn install_asdf(log: &mut Logger) -> Result<()> {
             let choice = if choice.trim() == "y" { 1 } else { 0 };
             if choice == 1 {
                 update_bashrc()?;
-                source_bashrc()?;
-
                 log.log(format!(
-                    "Please run {} again to initialise asdf",
+                    "Please run {}",
+                    "exec bash".cyan()
+                ));
+                log.log(format!(
+                    "and run {} to complete installation",
                     "starkdev install".cyan()
                 ));
+                std::process::exit(0);
             } else {
                 log.info("add the following to your bashrc file");
                 log.log(". $HOME/.asdf/asdf.sh");
@@ -110,7 +114,7 @@ fn install_asdf(log: &mut Logger) -> Result<()> {
             return Err(anyhow!("{}", error));
         }
     } else {
-        log.info("asdf is already installed".green());
+        log.info(format!("{} is already installed", "asdf".cyan()));
     }
 
     Ok(())
@@ -142,7 +146,7 @@ fn install_scarb(version: &str, log: &mut Logger) -> Result<()> {
             .unwrap();
 
         if scarb_output.status.success() {
-            log.success("scarb installed successfully.");
+            log.success(format!("{} is installed successfully", "scarb".cyan()));
         } else {
             println!("scarb output: {:?}", scarb_output);
             let error = String::from_utf8_lossy(&scarb_output.stderr)
@@ -159,7 +163,7 @@ fn install_scarb(version: &str, log: &mut Logger) -> Result<()> {
             .output()
             .unwrap();
     } else {
-        log.info("scarb is already installed".green());
+        log.info(format!("{} is already installed", "scarb".cyan()));
     }
 
     Ok(())
@@ -190,7 +194,7 @@ fn install_snfoundry(log: &mut Logger) -> Result<()> {
         .unwrap();
 
     if snforge_output.status.success() {
-        log.success("snforge installed successfully.");
+        log.success(format!("{} is installed successfully", "snforge".cyan()));
     } else {
         let error = String::from_utf8_lossy(&snforge_output.stderr)
             .into_owned()
