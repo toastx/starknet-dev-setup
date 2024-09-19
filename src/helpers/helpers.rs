@@ -5,11 +5,10 @@ use std::fs::{read_to_string, OpenOptions};
 use std::io::{self, Write};
 use std::process::Command;
 
-
 pub fn update_bashrc() -> Result<()> {
     let mut log = Logger::new();
     let bashrc_path = std::env::var("HOME").unwrap() + "/.bashrc";
-    println!("bashrc path: {}", bashrc_path);
+
     let bashrc_content = read_to_string(&bashrc_path)?;
     let asdf_lines = r#"
 # Load asdf completions and asdf itself
@@ -27,12 +26,9 @@ pub fn update_bashrc() -> Result<()> {
     Ok(())
 }
 
-
 pub fn source_bashrc() -> io::Result<()> {
-    let status = Command::new("bash")
-        .arg("-c")
-        .arg("source ~/.bashrc")
-        .status()?;
+    let bashrc_path = std::env::var("HOME").unwrap() + "/.bashrc";
+    let status = Command::new("source").arg(bashrc_path).status()?;
 
     if status.success() {
         println!("Successfully sourced ~/.bashrc.");
@@ -71,7 +67,10 @@ pub fn install_package(package: &str) -> Result<()> {
         .output()?;
 
     if !apt_output.status.success() {
-        let error = "Failed to install".to_string().red();
+        let error = String::from_utf8_lossy(&apt_output.stderr)
+            .into_owned()
+            .to_string()
+            .red();
         return Err(anyhow!("{} {}", error, package.cyan()));
     }
     let success = "installed successfully.".to_string().green();

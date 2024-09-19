@@ -33,7 +33,8 @@ fn main() -> Result<()> {
     }
     log.success("The dev setup is completed successfully!");
     log.info(format!(
-        "use scarb new {} to create a new project",
+        "use {} {} to create a new project",
+        "scarb new".cyan(),
         "<project_name>".green()
     ));
 
@@ -54,9 +55,9 @@ fn starknet_install(force: bool, log: &mut Logger) -> Result<()> {
         scarb_version
     };
 
-    
     install_asdf(log)?;
     install_scarb(&scarb_version, log)?;
+    install_snfoundry(log)?;
 
     log.success("Installation completed successfully!");
     Ok(())
@@ -81,22 +82,33 @@ fn install_asdf(log: &mut Logger) -> Result<()> {
             .arg(&asdf_dir)
             .output()
             .unwrap();
-        
-        log.success("asdf installed successfully.");
-        let choice = prompt_user("Do you want to automate .bashrc edits (y/n):")?;
-        let choice = if choice.trim() == "y" { 1 } else { 0 };
-        if choice == 1 {
-            update_bashrc()?;
-            source_bashrc()?;
-        } else {
-            log.info("add the following to your bashrc file");
-            log.log(". $HOME/.asdf/asdf.sh");
-            log.log(". $HOME/.asdf/completions/asdf.bash");
-            log.log("and rerun the cli");
-            std::process::exit(0);
+        if asdf_output.status.success() {
+            log.log(format!("{:?}", asdf_output));
+            log.success("asdf installed successfully.");
+            let choice = prompt_user("Do you want to automate .bashrc edits (y/n):")?;
+            let choice = if choice.trim() == "y" { 1 } else { 0 };
+            if choice == 1 {
+                update_bashrc()?;
+                source_bashrc()?;
 
+                log.log(format!(
+                    "Please run {} again to initialise asdf",
+                    "starkdev install".cyan()
+                ));
+            } else {
+                log.info("add the following to your bashrc file");
+                log.log(". $HOME/.asdf/asdf.sh");
+                log.log(". $HOME/.asdf/completions/asdf.bash");
+                log.log("and rerun the cli");
+                std::process::exit(0);
+            }
+        } else {
+            let error = String::from_utf8_lossy(&asdf_output.stderr)
+                .into_owned()
+                .to_string()
+                .red();
+            return Err(anyhow!("{}", error));
         }
-        
     } else {
         log.info("asdf is already installed".green());
     }
@@ -116,7 +128,10 @@ fn install_scarb(version: &str, log: &mut Logger) -> Result<()> {
 
         if !plugin_output.status.success() {
             println!("plugin output: {:?}", plugin_output);
-            let error = "Failed to add".to_string().red();
+            let error = String::from_utf8_lossy(&plugin_output.stderr)
+                .into_owned()
+                .to_string()
+                .red();
             return Err(anyhow!("{} {}", error, "scarb".cyan()));
         }
         let scarb_output = Command::new("asdf")
@@ -130,7 +145,10 @@ fn install_scarb(version: &str, log: &mut Logger) -> Result<()> {
             log.success("scarb installed successfully.");
         } else {
             println!("scarb output: {:?}", scarb_output);
-            let error = "Failed to install".to_string().red();
+            let error = String::from_utf8_lossy(&scarb_output.stderr)
+                .into_owned()
+                .to_string()
+                .red();
             return Err(anyhow!("{} {}", error, "scarb".cyan()));
         }
 
@@ -142,6 +160,43 @@ fn install_scarb(version: &str, log: &mut Logger) -> Result<()> {
             .unwrap();
     } else {
         log.info("scarb is already installed".green());
+    }
+
+    Ok(())
+}
+fn install_snfoundry(log: &mut Logger) -> Result<()> {
+    log.loading("Installing snforge...".cyan());
+    let snforge_plugin_output = Command::new("asdf")
+        .arg("plugin")
+        .arg("add")
+        .arg("starknet-foundry")
+        .output()
+        .unwrap();
+
+    if !snforge_plugin_output.status.success() {
+        println!("plugin output: {:?}", snforge_plugin_output);
+        let error = String::from_utf8_lossy(&snforge_plugin_output.stderr)
+            .into_owned()
+            .to_string()
+            .red();
+        return Err(anyhow!("{} {}", error, "scarb".cyan()));
+    }
+
+    let snforge_output = Command::new("asdf")
+        .arg("install")
+        .arg("starknet-foundry")
+        .arg("latest")
+        .output()
+        .unwrap();
+
+    if snforge_output.status.success() {
+        log.success("snforge installed successfully.");
+    } else {
+        let error = String::from_utf8_lossy(&snforge_output.stderr)
+            .into_owned()
+            .to_string()
+            .red();
+        return Err(anyhow!("{} {}", error, "snforge".cyan()));
     }
 
     Ok(())
