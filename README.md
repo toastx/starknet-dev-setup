@@ -3,7 +3,7 @@
 ---
 Nothing much to see here
 
-Just install the binary and run `sdc install`
+Just install the package using `cargo install starkdev` and run `starkdev install`
 
 The binary will install asdf, scarb and configure their bashrc files for them to work
 
