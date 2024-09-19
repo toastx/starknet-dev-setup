@@ -5,9 +5,7 @@ Nothing much to see here
 
 Just install the package using `cargo install starkdev` and run `starkdev install`
 
-The binary will install asdf, scarb and configure their bashrc files for them to work
-
-Enable `sudo su` if permission access denied error
+The binary will install ***asdf***, ***scarb*** , ***snforge*** automatically
 
 Works only for linux
 
